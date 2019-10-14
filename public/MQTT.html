@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Insert title here</title>
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script src="http://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script type="text/javascript">
+   var socket=null;
+   var timer=null;
+   $(document).ready(function(){
+	   socket=io.connect(); // 3000port
+	   // Node.js보낸 데이터를 수신하는 부분
+	   socket.on("socket_evt_mqtt", function(data){
+		   data=JSON.parse(data);
+		   $(".mqttlist").html('<li>'+data.tmp+'('+data.hum+'%)'+'</li>');
+	   });
+	   if(timer==null){
+		   timer=window.setInterval("timer1()", 1000);
+	   }	   
+   });
+  function timer1(){
+	  socket.emit("socket_evt_mqtt", JSON.stringify({}));
+	  console.log("---------");
+  }  
+  function ledOnOff(value){
+      // {"led":1}, {"led":2}
+      socket.emit("socket_evt_led", JSON.stringify({led:Number(value)}));
+  }
+  function ajaxledOnOff(value){
+      if(value=="1") var value="on";
+      else if(value=="2") var value="off";
+      $.ajax({
+         url:"http://172.30.1.15:3000/devices/led/"+value,
+         type:"post",
+         success : ledStatus,
+         error : function(){ alert("error");}
+     });
+  }
+ function ledStatus(obj){
+	 $("#led").html("<font color='red'>"+obj.led+"</font> 되었습니다.");	 
+ }
+</script>
+</head>
+<body>
+MQTT 모니터링 서비스
+<div id="msg">  
+   <div id="mqtt_logs">
+      <ul class="mqttlist"></ul>
+   </div>
+   <h1>socket 통신 방식(LED제어)</h1>
+   <button onclick="ledOnOff(1)">LED_ON</button>
+   <button onclick="ledOnOff(2)">LED_OFF</button>
+   
+   <h1>RESTfull Service 통신 방식(LED제어)</h1>
+   <button onclick="ajaxledOnOff(1)">LED_ON</button>
+   <button onclick="ajaxledOnOff(2)">LED_OFF</button>
+   <div id="led">LED STATUS</div>
+</div>
+</body>
+</html>
